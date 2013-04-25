@@ -197,3 +197,23 @@ def send_cancellation_email(reservation):
     }
     to = [reservation.user.email]
     send_mail_wrapper(subject, template, context, to)
+
+
+def check_reservations_slot_duration(asset):
+    from datetime import datetime
+    valid_time_list = get_suitable_begin_times(asset.slot_duration, datetime.now())
+    query_list = []
+    parameter_list = ()
+    for valid_time in valid_time_list:
+        query_list.append("""((extract(hour from reservation_begins) = %s)
+                              AND (extract (minute from reservation_begins) = %s))""")
+        parameter_list += (valid_time.hour, valid_time.minute)
+
+    query = "NOT ("+" OR ".join(query_list)+")"
+    affected_reservations = Reservation.objects.extra(where=[query], params=parameter_list)
+    affected_reservations = affected_reservations.filter(Q(asset__id=asset.id)
+                                                         & Q(reservation_begins__gt=datetime.now()))
+
+    for i in affected_reservations:
+        send_cancellation_email(i)
+        i.delete()
