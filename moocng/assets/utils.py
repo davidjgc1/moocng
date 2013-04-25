@@ -88,6 +88,20 @@ def get_concurrent_reservations(reservation):
         return total_reservations
 
 
+def get_suitable_begin_times(slot_duration, date):
+    """This function returns a list containing the times at which a reservation
+    might begin, taking as parameters the desired date and the slot duration
+    of the asset.
+    Date might be either a date or a datetime instance."""
+    res = []
+    baseDate = datetime.date.fromordinal(date.toordinal())
+    entry = datetime.datetime.fromordinal(baseDate.toordinal())
+    while entry.date() == baseDate:
+        res.append(entry)
+        entry += datetime.timedelta(0, slot_duration * 60)
+    return res
+
+
 def is_asset_bookable(user, asset, availability, reservation_begins, reservation_ends, is_modification=False):
     """This method checks if there is possible to create a new reservation
     with the given parameters.
