@@ -220,7 +220,11 @@ def get_reservations_not_compatible_with_slot_duration(asset):
                               AND (extract (minute from reservation_begins) = %s))""")
             parameter_list += (valid_time.hour, valid_time.minute)
 
-    query = "NOT (" + " OR ".join(query_list) + ")"
+    query = """((mod(CAST((extract(epoch FROM (reservation_ends-reservation_begins))) AS NUMERIC),
+                    %s) != 0)
+               OR NOT (""" + " OR ".join(query_list) + """)
+               OR (extract (second from reservation_begins) != 0))"""
+    parameter_list = (slot_duration * 60, ) + parameter_list
     reservations = Reservation.objects.extra(where=[query],
                                              params=parameter_list)
     reservations = reservations.filter(Q(asset__id=asset.id)
