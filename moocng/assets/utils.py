@@ -229,6 +229,6 @@ def get_reservations_not_compatible_with_slot_duration(asset):
 
 
 def check_reservations_slot_duration(asset):
-    for i in _get_reservations_not_compatible_with_slot_duration(asset):
+    for i in get_reservations_not_compatible_with_slot_duration(asset):
         send_cancellation_email(i)
         i.delete()
