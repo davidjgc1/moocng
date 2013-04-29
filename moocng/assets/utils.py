@@ -109,13 +109,15 @@ def get_suitable_begin_times(slot_duration, date, specific_date=None):
     return res
 
 
-def is_asset_bookable(user, asset, availability, reservation_begins, reservation_ends, is_modification=False):
+def is_asset_bookable(user, asset, availability, reservation_begins, reservation_ends, old_reservation=None):
     """This method checks if there is possible to create a new reservation
     with the given parameters.
     It returns a tuple whose first parameter is a boolean which specifies if
     it's possible to create the reservation, and if it's not possible the
     second parameter would be a string which specifies why it's not possible
     to create the reservation"""
+
+    is_modification = (old_reservation is not None)
 
     if not availability.assets.filter(id=asset.id).exists():
         return(False, _('This asset is not available from this nugget.'))
@@ -143,7 +145,11 @@ def is_asset_bookable(user, asset, availability, reservation_begins, reservation
     collisions = Reservation.objects.filter(asset__id=asset.id)
     collisions = collisions.exclude(Q(reservation_begins__gte=reservation_ends)
                                     | Q(reservation_ends__lte=reservation_begins))
-    if collisions.count() >= (asset.max_bookable_slots * asset.capacity):
+    if is_modification:
+        collisions = collisions.exclude(Q(id=old_reservation.id))
+
+    collision_count = collisions.count()
+    if collision_count >= (asset.max_bookable_slots * asset.capacity):
         return (False, _("No available places left at selected time."))
 
     own_collisions = collisions.filter(user__id=user.id)
