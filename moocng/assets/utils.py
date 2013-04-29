@@ -249,8 +249,9 @@ def get_reservations_not_compatible_with_slot_duration(asset):
     parameter_list = (slot_duration * 60, ) + parameter_list
     reservations = Reservation.objects.extra(where=[query],
                                              params=parameter_list)
+    filter_from = datetime.datetime.now() + datetime.timedelta(minutes=asset.cancelation_in_advance)
     reservations = reservations.filter(Q(asset__id=asset.id)
-                                       & Q(reservation_begins__gt=datetime.datetime.now()))
+                                       & Q(reservation_begins__gt=filter_from))
     return reservations
 
 
